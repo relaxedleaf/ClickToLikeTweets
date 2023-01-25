@@ -1,22 +1,13 @@
-import * as _chakra_ui_system from '@chakra-ui/system';
-
 import {
 	Box,
 	Button,
-	ButtonProps,
 	Card,
 	CardBody,
-	CardFooter,
-	CardHeader,
-	Center,
 	Container,
-	Divider,
 	Flex,
-	Heading,
 	Stack,
 	StackDivider,
 	Text,
-	useColorMode,
 } from '@chakra-ui/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -24,6 +15,7 @@ import { AiOutlineHeart } from 'react-icons/ai';
 import Head from 'next/head';
 import { Icon } from '@chakra-ui/react';
 import LikedTweet from './types/LikedTweet';
+import Link from 'next/link';
 import axios from 'axios';
 import searchWords from '../constants/searchWords';
 import styles from '../styles/Home.module.css';
@@ -34,15 +26,19 @@ const TweetCard = ({ tweet }: { tweet: LikedTweet }) => {
 			<CardBody>
 				<Stack divider={<StackDivider />} spacing='4'>
 					<Box>
-						<Text fontSize='md'>{tweet.text}</Text>
+						<Link
+							href={`https://twitter.com/relaxed_leaf/status/${tweet.id}`}
+							target='_blank'
+						>
+							<Text fontSize='md'>{tweet.text}</Text>
+						</Link>
 					</Box>
 					<Box>
 						<Text fontSize='sm'>
-							Liked Count: {tweet.liked_by.meta.result_count}
+							Liked: {tweet.liked_by.meta.result_count}
 						</Text>
 						<Text pt='2' fontSize='sm'>
-							Retweeted Count:{' '}
-							{tweet.retweeted_by.meta.result_count}
+							Retweeted: {tweet.retweeted_by.meta.result_count}
 						</Text>
 					</Box>
 				</Stack>
