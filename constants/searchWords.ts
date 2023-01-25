@@ -55,7 +55,7 @@ const devOps = [
 	'Docker',
 	'Kubernetes',
 	'Azure',
-	'AWS',
+	'Amazon Web Services',
 	'CI/CD',
 	'GitHub',
 	'GitLab',

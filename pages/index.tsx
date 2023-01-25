@@ -22,7 +22,7 @@ import styles from '../styles/Home.module.css';
 
 const TweetCard = ({ tweet }: { tweet: LikedTweet }) => {
 	return (
-		<Card maxW='sm' minW='280px'>
+		<Card maxW='sm' minW={{sm: '280px', md: 'sm'}}>
 			<CardBody>
 				<Stack divider={<StackDivider />} spacing='4'>
 					<Box>
