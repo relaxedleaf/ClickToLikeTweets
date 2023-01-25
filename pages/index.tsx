@@ -1,10 +1,15 @@
+import * as _chakra_ui_system from '@chakra-ui/system';
+
 import {
 	Box,
 	Button,
+	ButtonProps,
 	Card,
 	CardBody,
 	CardFooter,
 	CardHeader,
+	Center,
+	Container,
 	Divider,
 	Flex,
 	Heading,
@@ -13,7 +18,7 @@ import {
 	Text,
 	useColorMode,
 } from '@chakra-ui/react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { AiOutlineHeart } from 'react-icons/ai';
 import Head from 'next/head';
@@ -25,7 +30,7 @@ import styles from '../styles/Home.module.css';
 
 const TweetCard = ({ tweet }: { tweet: LikedTweet }) => {
 	return (
-		<Card maxW='sm' minW='sm'>
+		<Card maxW='sm' minW='280px'>
 			<CardBody>
 				<Stack divider={<StackDivider />} spacing='4'>
 					<Box>
@@ -49,6 +54,7 @@ const TweetCard = ({ tweet }: { tweet: LikedTweet }) => {
 const Home = () => {
 	const [index, setIndex] = useState(0);
 	const [likedTweets, setLikedTweets] = useState<Array<LikedTweet>>([]);
+	const btnRef = useRef<HTMLButtonElement>(null);
 
 	const query = useMemo(() => {
 		return searchWords[index];
@@ -75,6 +81,12 @@ const Home = () => {
 		setIndex(nextIndex >= searchWords.length ? 0 : nextIndex);
 	}, [likedTweets, query]);
 
+	useEffect(() => {
+		if (btnRef.current) {
+			btnRef.current.scrollIntoView();
+		}
+	}, [likedTweets]);
+
 	return (
 		<>
 			<Head>
@@ -89,41 +101,45 @@ const Home = () => {
 				/>
 				<link rel='icon' href='/favicon.ico' />
 			</Head>
-			<main>
-				<Flex
-					direction='column'
-					justifyContent='center'
-					alignItems='center'
-					gap={5}
-				>
-					{likedTweets.map((tweet) => {
-						return (
-							<Flex>
-								<TweetCard key={tweet.id} tweet={tweet} />
-							</Flex>
-						);
-					})}
-				</Flex>
-				<Flex
-					direction='column'
-					justifyContent='center'
-					alignItems='center'
-					pt={5}
-				>
-					<Flex>
-						<Text>{query}</Text>
+
+			<Container>
+				<Box padding='4'>
+					<Flex
+						direction='column'
+						justifyContent='center'
+						alignItems='center'
+						gap={5}
+					>
+						{likedTweets.map((tweet) => {
+							return (
+								<Flex key={tweet.id}>
+									<TweetCard tweet={tweet} />
+								</Flex>
+							);
+						})}
 					</Flex>
-					<Flex>
-						<Button
-							onClick={handleLick}
-							variant='solid'
-							leftIcon={<Icon as={AiOutlineHeart} />}
-						>
-							Like
-						</Button>
+					<Flex
+						direction='column'
+						justifyContent='center'
+						alignItems='center'
+						pt={5}
+					>
+						<Flex>
+							<Text>{query}</Text>
+						</Flex>
+						<Flex mt={2}>
+							<Button
+								onClick={handleLick}
+								variant='solid'
+								leftIcon={<Icon as={AiOutlineHeart} />}
+								ref={btnRef}
+							>
+								Like
+							</Button>
+						</Flex>
 					</Flex>
-				</Flex>
-			</main>
+				</Box>
+			</Container>
 		</>
 	);
 };
