@@ -11,16 +11,23 @@ import {
 	StackDivider,
 	Text,
 } from '@chakra-ui/react';
-import { ChangeEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+	ChangeEventHandler,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from 'react';
+import { LikedTweet, LikedTweets } from './types/LikedTweet';
 
 import { AiOutlineHeart } from 'react-icons/ai';
 import Head from 'next/head';
 import { Icon } from '@chakra-ui/react';
-import LikedTweet from './types/LikedTweet';
 import Link from 'next/link';
-import axios from 'axios';
+import { like } from '../lib/apis';
 import searchWords from '../constants/searchWords';
-import styles from '../styles/Home.module.css';
+import useDebounce from '../hooks/useDebounce';
+import useMountedEffect from '../hooks/useMountedEffect';
 
 const defaultSelectValue = searchWords[0];
 
@@ -28,34 +35,67 @@ const Home = () => {
 	const [likedTweets, setLikedTweets] = useState<Array<LikedTweet>>([]);
 	const btnRef = useRef<HTMLButtonElement>(null);
 	const [query, setQuery] = useState(defaultSelectValue);
+	const prevQuery = useRef(query);
+	const [likeCount, setLikeCount] = useState(0);
+	const prevLikeCount = useRef(likeCount);
+	const debouncedLikeCount = useDebounce({
+		value: likeCount,
+		delay: 1000,
+	});
+	const [nextToken, setNextToken] = useState<string | undefined>();
+	const prevNextToken = useRef(nextToken);
 
-	const handleSelectChange: ChangeEventHandler<HTMLSelectElement> = useCallback((evt) => {
-		setQuery(evt.target.value)
-	}, []);
+	const handleSelectChange: ChangeEventHandler<HTMLSelectElement> =
+		useCallback((evt) => {
+			setQuery(evt.target.value);
+		}, []);
 
-	const handleLike = useCallback(async () => {
-		const cloned = structuredClone(likedTweets);
-
-		const res = await axios.post('/api/tweet/like', {
-			query,
-		});
-
-		const tweet = res.data as LikedTweet;
-
-		const found = cloned.find((_t) => {
-			return _t.id === tweet.id;
-		});
-
-		if (!found) {
-			setLikedTweets([...cloned, tweet]);
-		}
-	}, [likedTweets, query]);
+	const handleLike = useCallback(() => {
+		setLikeCount(likeCount + 1);
+	}, [likeCount]);
 
 	useEffect(() => {
 		if (btnRef.current) {
 			btnRef.current.scrollIntoView();
 		}
 	}, [likedTweets]);
+
+	useMountedEffect(() => {
+		console.log('hey')
+		if (
+			query !== prevQuery.current ||
+			nextToken !== prevNextToken.current
+		) {
+			prevQuery.current = query;
+			prevNextToken.current = nextToken;
+			return;
+		}
+
+		const cloned = structuredClone(likedTweets);
+
+		let mounted = true;
+
+		//Make API Call
+		like({
+			query,
+			count: debouncedLikeCount - prevLikeCount.current,
+			nextToken,
+		}).then((tweetsResponse) => {
+			if (mounted) {
+				setNextToken(tweetsResponse.nextToken);
+
+				//TODO: Maybe need to deal with duplicates idk
+				setLikedTweets([...cloned, ...tweetsResponse.tweets]);
+			}
+		});
+
+		//Save prev like count
+		prevLikeCount.current = debouncedLikeCount;
+
+		return () => {
+			mounted = false;
+		};
+	}, [debouncedLikeCount, query, nextToken]);
 
 	return (
 		<>
@@ -96,7 +136,10 @@ const Home = () => {
 					>
 						<Flex>
 							<FormControl>
-								<Select defaultValue={defaultSelectValue} onChange={handleSelectChange}>
+								<Select
+									defaultValue={defaultSelectValue}
+									onChange={handleSelectChange}
+								>
 									{searchWords.map((word, idx) => {
 										return (
 											<option key={idx}>{word}</option>
@@ -148,6 +191,5 @@ const TweetCard = ({ tweet }: { tweet: LikedTweet }) => {
 		</Card>
 	);
 };
-
 
 export default Home;
