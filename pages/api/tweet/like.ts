@@ -95,7 +95,6 @@ const like = async (
 										return user.id === me.id_str;
 									}
 								);
-
 								if (!found) {
 									likedByResult.data.push({
 										id: me.id_str,
@@ -112,7 +111,9 @@ const like = async (
 										username: me.screen_name,
 									},
 								];
-								likedByResult.meta.result_count += 1;
+								likedByResult.meta = {
+									result_count: 1
+								}
 							}
 
 							return {
@@ -139,6 +140,7 @@ const like = async (
 			err.code === 429 &&
 			err.data.detail === 'Too Many Requests'
 		) {
+			console.error(err);
 			return res
 				.status(500)
 				.json({

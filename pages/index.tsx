@@ -3,7 +3,9 @@ import {
 	Button,
 	Card,
 	CardBody,
+	CardHeader,
 	Container,
+	Divider,
 	Flex,
 	FormControl,
 	Select,
@@ -47,7 +49,6 @@ const Home = () => {
 	const [nextToken, setNextToken] = useState<string | undefined>();
 	const prevNextToken = useRef(nextToken);
 	const toast = useToast();
-	
 
 	const handleSelectChange: ChangeEventHandler<HTMLSelectElement> =
 		useCallback((evt) => {
@@ -83,21 +84,24 @@ const Home = () => {
 			query,
 			count: debouncedLikeCount - prevLikeCount.current,
 			nextToken,
-		}).then((tweetsResponse) => {
-			if (mounted) {
-				setNextToken(tweetsResponse.nextToken);
-
-				//TODO: Maybe need to deal with duplicates idk
-				setLikedTweets([...cloned, ...tweetsResponse.tweets]);
-			}
-		}).catch((err: AxiosError) => {
-			toast({
-				status: 'error',
-				title: 'Error',
-				description: (err.response?.data as any).message || err.message,
-			})
-			console.log(err);
 		})
+			.then((tweetsResponse) => {
+				if (mounted) {
+					setNextToken(tweetsResponse.nextToken);
+
+					//TODO: Maybe need to deal with duplicates idk
+					setLikedTweets([...cloned, ...tweetsResponse.tweets]);
+				}
+			})
+			.catch((err: AxiosError) => {
+				toast({
+					status: 'error',
+					title: 'Error',
+					description:
+						(err.response?.data as any).message || err.message,
+				});
+				console.log(err);
+			});
 
 		//Save prev like count
 		prevLikeCount.current = debouncedLikeCount;
@@ -130,10 +134,10 @@ const Home = () => {
 						alignItems='center'
 						gap={5}
 					>
-						{likedTweets.map((tweet) => {
+						{likedTweets.map((tweet, idx) => {
 							return (
 								<Flex key={tweet.id}>
-									<TweetCard tweet={tweet} />
+									<TweetCard tweet={tweet} index={idx + 1}/>
 								</Flex>
 							);
 						})}
@@ -165,7 +169,7 @@ const Home = () => {
 								leftIcon={<Icon as={AiOutlineHeart} />}
 								ref={btnRef}
 							>
-								Like
+								Like +{likeCount - prevLikeCount.current}
 							</Button>
 						</Flex>
 					</Flex>
@@ -175,12 +179,15 @@ const Home = () => {
 	);
 };
 
-const TweetCard = ({ tweet }: { tweet: LikedTweet }) => {
+const TweetCard = ({ tweet, index }: { tweet: LikedTweet, index: number }) => {
 	return (
 		<Card maxW='sm' minW={{ sm: '280px', md: 'sm' }}>
 			<CardBody>
 				<Stack divider={<StackDivider />} spacing='4'>
 					<Box>
+						<Flex justifyContent='end'>
+							<Box>#{index}</Box>
+						</Flex>
 						<Link
 							href={`https://twitter.com/relaxed_leaf/status/${tweet.id}`}
 							target='_blank'
