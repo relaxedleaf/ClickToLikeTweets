@@ -21,6 +21,7 @@ import {
 import { LikedTweet, LikedTweets } from './types/LikedTweet';
 
 import { AiOutlineHeart } from 'react-icons/ai';
+import { AxiosError } from 'axios';
 import Head from 'next/head';
 import { Icon } from '@chakra-ui/react';
 import Link from 'next/link';
@@ -28,6 +29,7 @@ import { like } from '../lib/apis';
 import searchWords from '../constants/searchWords';
 import useDebounce from '../hooks/useDebounce';
 import useMountedEffect from '../hooks/useMountedEffect';
+import useToast from '../hooks/useToast';
 
 const defaultSelectValue = searchWords[0];
 
@@ -44,6 +46,8 @@ const Home = () => {
 	});
 	const [nextToken, setNextToken] = useState<string | undefined>();
 	const prevNextToken = useRef(nextToken);
+	const toast = useToast();
+	
 
 	const handleSelectChange: ChangeEventHandler<HTMLSelectElement> =
 		useCallback((evt) => {
@@ -61,7 +65,6 @@ const Home = () => {
 	}, [likedTweets]);
 
 	useMountedEffect(() => {
-		console.log('hey')
 		if (
 			query !== prevQuery.current ||
 			nextToken !== prevNextToken.current
@@ -87,7 +90,14 @@ const Home = () => {
 				//TODO: Maybe need to deal with duplicates idk
 				setLikedTweets([...cloned, ...tweetsResponse.tweets]);
 			}
-		});
+		}).catch((err: AxiosError) => {
+			toast({
+				status: 'error',
+				title: 'Error',
+				description: (err.response?.data as any).message || err.message,
+			})
+			console.log(err);
+		})
 
 		//Save prev like count
 		prevLikeCount.current = debouncedLikeCount;

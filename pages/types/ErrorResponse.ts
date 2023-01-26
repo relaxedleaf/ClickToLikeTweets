@@ -1,4 +1,4 @@
-type ErrorResponse = {
+interface ErrorResponse {
 	message: string;
 };
 

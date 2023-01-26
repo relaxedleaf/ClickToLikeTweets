@@ -1,11 +1,13 @@
 import { LikedTweet, LikedTweets } from '../../types/LikedTweet';
 import { NextApiRequest, NextApiResponse } from 'next';
 import Twitter, {
+	ApiResponseError,
 	TweetV2LikeResult,
 	TweetV2LikedByResult,
 } from 'twitter-api-v2';
 
 import ErrorResponse from '../../types/ErrorResponse';
+import TooManyRequestError from '../../types/TooManyRequestError';
 
 const twitterClient = new Twitter({
 	appKey: process.env.CONSUMER_KEY!,
@@ -19,7 +21,7 @@ const MAX_RESULT_MIN = 10; //The `max_results` query parameter value has to be g
 
 const like = async (
 	req: NextApiRequest,
-	res: NextApiResponse<LikedTweets | ErrorResponse>
+	res: NextApiResponse<LikedTweets | ErrorResponse | TooManyRequestError>
 ) => {
 	try {
 		if (req.method !== 'POST') {
@@ -45,7 +47,7 @@ const like = async (
 			sort_order: 'recency',
 			next_token: nextToken,
 			max_results: (() => {
-				if(count <=  MAX_RESULT_MIN){
+				if (count <= MAX_RESULT_MIN) {
 					return MAX_RESULT_MIN;
 				}
 
@@ -130,7 +132,20 @@ const like = async (
 
 		return res.json(data);
 	} catch (err) {
-		const errMsg = 'Failed to like tweet';
+		let errMsg = 'Failed to like tweet';
+
+		if (
+			err instanceof ApiResponseError &&
+			err.code === 429 &&
+			err.data.detail === 'Too Many Requests'
+		) {
+			return res
+				.status(500)
+				.json({
+					message: err.data.detail,
+					reset: err.rateLimit?.reset,
+				});
+		}
 		console.error(errMsg, err);
 		res.status(500).json({ message: errMsg });
 	}
