@@ -35,6 +35,11 @@ const like = async (
 			sort_order: 'recency',
 		});
 
+		console.log({tweetData: tweetResults.data})
+		console.log({tweetDataData: tweetResults.data.data})
+		console.log({tweetDataMeta: tweetResults.data.meta})
+		console.log({tweetResults: tweetResults.meta});
+
 		const tweets = tweetResults.tweets;
 
 		if (!tweets.length) {

@@ -5,11 +5,13 @@ import {
 	CardBody,
 	Container,
 	Flex,
+	FormControl,
+	Select,
 	Stack,
 	StackDivider,
 	Text,
 } from '@chakra-ui/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { AiOutlineHeart } from 'react-icons/ai';
 import Head from 'next/head';
@@ -20,43 +22,18 @@ import axios from 'axios';
 import searchWords from '../constants/searchWords';
 import styles from '../styles/Home.module.css';
 
-const TweetCard = ({ tweet }: { tweet: LikedTweet }) => {
-	return (
-		<Card maxW='sm' minW={{sm: '280px', md: 'sm'}}>
-			<CardBody>
-				<Stack divider={<StackDivider />} spacing='4'>
-					<Box>
-						<Link
-							href={`https://twitter.com/relaxed_leaf/status/${tweet.id}`}
-							target='_blank'
-						>
-							<Text fontSize='md'>{tweet.text}</Text>
-						</Link>
-					</Box>
-					<Box>
-						<Text fontSize='sm'>
-							Liked: {tweet.liked_by.meta.result_count}
-						</Text>
-						<Text pt='2' fontSize='sm'>
-							Retweeted: {tweet.retweeted_by.meta.result_count}
-						</Text>
-					</Box>
-				</Stack>
-			</CardBody>
-		</Card>
-	);
-};
+const defaultSelectValue = searchWords[0];
 
 const Home = () => {
-	const [index, setIndex] = useState(0);
 	const [likedTweets, setLikedTweets] = useState<Array<LikedTweet>>([]);
 	const btnRef = useRef<HTMLButtonElement>(null);
+	const [query, setQuery] = useState(defaultSelectValue);
 
-	const query = useMemo(() => {
-		return searchWords[index];
-	}, [index]);
+	const handleSelectChange: ChangeEventHandler<HTMLSelectElement> = useCallback((evt) => {
+		setQuery(evt.target.value)
+	}, []);
 
-	const handleLick = useCallback(async () => {
+	const handleLike = useCallback(async () => {
 		const cloned = structuredClone(likedTweets);
 
 		const res = await axios.post('/api/tweet/like', {
@@ -72,9 +49,6 @@ const Home = () => {
 		if (!found) {
 			setLikedTweets([...cloned, tweet]);
 		}
-
-		const nextIndex = index + 1;
-		setIndex(nextIndex >= searchWords.length ? 0 : nextIndex);
 	}, [likedTweets, query]);
 
 	useEffect(() => {
@@ -121,11 +95,19 @@ const Home = () => {
 						pt={5}
 					>
 						<Flex>
-							<Text>{query}</Text>
+							<FormControl>
+								<Select defaultValue={defaultSelectValue} onChange={handleSelectChange}>
+									{searchWords.map((word, idx) => {
+										return (
+											<option key={idx}>{word}</option>
+										);
+									})}
+								</Select>
+							</FormControl>
 						</Flex>
 						<Flex mt={2}>
 							<Button
-								onClick={handleLick}
+								onClick={handleLike}
 								variant='solid'
 								leftIcon={<Icon as={AiOutlineHeart} />}
 								ref={btnRef}
@@ -139,5 +121,33 @@ const Home = () => {
 		</>
 	);
 };
+
+const TweetCard = ({ tweet }: { tweet: LikedTweet }) => {
+	return (
+		<Card maxW='sm' minW={{ sm: '280px', md: 'sm' }}>
+			<CardBody>
+				<Stack divider={<StackDivider />} spacing='4'>
+					<Box>
+						<Link
+							href={`https://twitter.com/relaxed_leaf/status/${tweet.id}`}
+							target='_blank'
+						>
+							<Text fontSize='md'>{tweet.text}</Text>
+						</Link>
+					</Box>
+					<Box>
+						<Text fontSize='sm'>
+							Liked: {tweet.liked_by.meta.result_count}
+						</Text>
+						<Text pt='2' fontSize='sm'>
+							Retweeted: {tweet.retweeted_by.meta.result_count}
+						</Text>
+					</Box>
+				</Stack>
+			</CardBody>
+		</Card>
+	);
+};
+
 
 export default Home;
