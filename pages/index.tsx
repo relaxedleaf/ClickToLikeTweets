@@ -8,9 +8,12 @@ import {
 	Divider,
 	Flex,
 	FormControl,
+	FormLabel,
+	Input,
 	Select,
 	Stack,
 	StackDivider,
+	Switch,
 	Tag,
 	Text,
 } from '@chakra-ui/react';
@@ -18,6 +21,7 @@ import {
 	ChangeEventHandler,
 	useCallback,
 	useEffect,
+	useMemo,
 	useRef,
 	useState,
 } from 'react';
@@ -28,6 +32,7 @@ import Head from 'next/head';
 import { Icon } from '@chakra-ui/react';
 import { LikedTweet } from './types/LikedTweet';
 import Link from 'next/link';
+import { format } from 'date-fns';
 import { like } from '../lib/apis';
 import searchWords from '../constants/searchWords';
 import useDebounce from '../hooks/useDebounce';
@@ -51,6 +56,11 @@ const Home = () => {
 	const [reset, setNextReset] = useState<number | undefined>();
 	const prevNextToken = useRef(nextToken);
 	const toast = useToast();
+	const [clickMode, setClickMode] = useState<boolean>(true);
+
+	const handleLikeModeToggle = useCallback(() => {
+		setClickMode(!clickMode);
+	}, [clickMode]);
 
 	const handleSelectChange: ChangeEventHandler<HTMLSelectElement> =
 		useCallback((evt) => {
@@ -121,6 +131,12 @@ const Home = () => {
 		};
 	}, [debouncedLikeCount, query, nextToken]);
 
+	const formattedDate = useMemo(() => {
+		if (reset) {
+			return format(new Date(reset * 1000), 'M/d/yyyy hh:mm a');
+		}
+	}, [reset]);
+
 	return (
 		<>
 			<Head>
@@ -137,15 +153,17 @@ const Home = () => {
 			</Head>
 
 			<Container>
-				<Flex position={"fixed"} left={0} zIndex={1}>
-					<Container mt={5}>
-						<Box>
-							<Tag colorScheme='telegram'>
-								Reset: 1/26/2023 7:00 PM
-							</Tag>
-						</Box>
-					</Container>
-				</Flex>
+				{formattedDate && (
+					<Box position={'fixed'} left={0} zIndex={1}>
+						<Container mt={5}>
+							<Box>
+								<Tag colorScheme='telegram'>
+									Reset: {formattedDate}
+								</Tag>
+							</Box>
+						</Container>
+					</Box>
+				)}
 				<Box padding='4'>
 					<Flex
 						direction='column'
@@ -181,6 +199,14 @@ const Home = () => {
 								</Select>
 							</FormControl>
 						</Flex>
+						{!clickMode && (
+							<Flex mt={2}>
+								<FormControl display='flex' alignItems='center'>
+									<Input value={50} width='60px' />
+								</FormControl>
+							</Flex>
+						)}
+
 						<Flex mt={2}>
 							<Button
 								onClick={handleLike}
@@ -192,6 +218,16 @@ const Home = () => {
 							</Button>
 						</Flex>
 					</Flex>
+				</Box>
+				<Box position={'fixed'} bottom={0} right={0} zIndex={1}>
+					<Container mb={5}>
+						<FormControl display='flex' alignItems='center'>
+							<Switch
+								checked={clickMode}
+								onChange={handleLikeModeToggle}
+							/>
+						</FormControl>
+					</Container>
 				</Box>
 			</Container>
 		</>
