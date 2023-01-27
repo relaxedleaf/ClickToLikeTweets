@@ -10,6 +10,11 @@ import {
 	FormControl,
 	FormLabel,
 	Input,
+	NumberDecrementStepper,
+	NumberIncrementStepper,
+	NumberInput,
+	NumberInputField,
+	NumberInputStepper,
 	Select,
 	Stack,
 	StackDivider,
@@ -57,6 +62,7 @@ const Home = () => {
 	const prevNextToken = useRef(nextToken);
 	const toast = useToast();
 	const [clickMode, setClickMode] = useState<boolean>(true);
+	const [bulkLikeCount, setBulkLikeCount] = useState(10);
 
 	const handleLikeModeToggle = useCallback(() => {
 		setClickMode(!clickMode);
@@ -67,15 +73,50 @@ const Home = () => {
 			setQuery(evt.target.value);
 		}, []);
 
-	const handleLike = useCallback(() => {
-		setLikeCount(likeCount + 1);
-	}, [likeCount]);
+	const handleLikeBtnClick = useCallback(() => {
+		if (clickMode) {
+			setLikeCount(likeCount + 1);
+		} else {
+			handleApiCall({ count: bulkLikeCount });
+		}
+	}, [likeCount, bulkLikeCount, clickMode]);
 
 	useEffect(() => {
 		if (btnRef.current) {
 			btnRef.current.scrollIntoView();
 		}
 	}, [likedTweets]);
+
+	const handleApiCall = useCallback(
+		({ count }: { count: number }) => {
+			console.log(count);
+			const cloned = structuredClone(likedTweets);
+			like({
+				query,
+				count,
+				nextToken,
+			})
+				.then((tweetsResponse) => {
+					setNextToken(tweetsResponse.nextToken);
+
+					//TODO: Maybe need to deal with duplicates idk
+					setLikedTweets([...cloned, ...tweetsResponse.tweets]);
+				})
+				.catch((err: AxiosError) => {
+					const data = err.response?.data as any;
+					toast({
+						status: 'error',
+						title: 'Error',
+						description: data.message || err.message,
+					});
+					if (data.reset) {
+						setNextReset(data.reset);
+					}
+					console.log(err);
+				});
+		},
+		[likedTweets, query, nextToken]
+	);
 
 	useMountedEffect(() => {
 		if (
@@ -86,49 +127,15 @@ const Home = () => {
 			prevNextToken.current = nextToken;
 			return;
 		}
-
 		const count = debouncedLikeCount - prevLikeCount.current;
 		if (count <= 0) {
 			return;
 		}
 
-		const cloned = structuredClone(likedTweets);
-
-		let mounted = true;
-
-		//Make API Call
-		like({
-			query,
-			count,
-			nextToken,
-		})
-			.then((tweetsResponse) => {
-				if (mounted) {
-					setNextToken(tweetsResponse.nextToken);
-
-					//TODO: Maybe need to deal with duplicates idk
-					setLikedTweets([...cloned, ...tweetsResponse.tweets]);
-				}
-			})
-			.catch((err: AxiosError) => {
-				const data = err.response?.data as any;
-				toast({
-					status: 'error',
-					title: 'Error',
-					description: data.message || err.message,
-				});
-				if (data.reset) {
-					setNextReset(data.reset);
-				}
-				console.log(err);
-			});
+		handleApiCall({ count });
 
 		//Save prev like count
 		prevLikeCount.current = debouncedLikeCount;
-
-		return () => {
-			mounted = false;
-		};
 	}, [debouncedLikeCount, query, nextToken]);
 
 	const formattedDate = useMemo(() => {
@@ -187,34 +194,64 @@ const Home = () => {
 					>
 						<Flex>
 							<FormControl>
-								<Select
-									defaultValue={defaultSelectValue}
-									onChange={handleSelectChange}
-								>
-									{searchWords.map((word, idx) => {
-										return (
-											<option key={idx}>{word}</option>
-										);
-									})}
-								</Select>
+								<Flex gap={3}>
+									<Flex>
+										<Select
+											defaultValue={defaultSelectValue}
+											onChange={handleSelectChange}
+										>
+											{searchWords.map((word, idx) => {
+												return (
+													<option key={idx}>
+														{word}
+													</option>
+												);
+											})}
+										</Select>
+									</Flex>
+
+									{!clickMode && (
+										<Flex gap={1}>
+											<Flex alignSelf='flex-end'>x</Flex>
+											<Flex>
+												<NumberInput
+													defaultValue={bulkLikeCount}
+													value={bulkLikeCount}
+													min={1}
+													max={50}
+													width='80px'
+													onChange={(
+														valString,
+														valNumber
+													) => {
+														setBulkLikeCount(
+															valNumber
+														);
+													}}
+												>
+													<NumberInputField />
+													<NumberInputStepper>
+														<NumberIncrementStepper />
+														<NumberDecrementStepper />
+													</NumberInputStepper>
+												</NumberInput>
+											</Flex>
+										</Flex>
+									)}
+								</Flex>
 							</FormControl>
 						</Flex>
-						{!clickMode && (
-							<Flex mt={2}>
-								<FormControl display='flex' alignItems='center'>
-									<Input value={50} width='60px' />
-								</FormControl>
-							</Flex>
-						)}
-
 						<Flex mt={2}>
 							<Button
-								onClick={handleLike}
+								onClick={handleLikeBtnClick}
 								variant='solid'
 								leftIcon={<Icon as={AiOutlineHeart} />}
 								ref={btnRef}
 							>
-								Like +{likeCount - prevLikeCount.current}
+								Like{' '}
+								{clickMode && (
+									<>+{likeCount - prevLikeCount.current}</>
+								)}
 							</Button>
 						</Flex>
 					</Flex>
