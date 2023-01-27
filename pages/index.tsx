@@ -11,6 +11,7 @@ import {
 	Select,
 	Stack,
 	StackDivider,
+	Tag,
 	Text,
 } from '@chakra-ui/react';
 import {
@@ -20,12 +21,12 @@ import {
 	useRef,
 	useState,
 } from 'react';
-import { LikedTweet, LikedTweets } from './types/LikedTweet';
 
 import { AiOutlineHeart } from 'react-icons/ai';
 import { AxiosError } from 'axios';
 import Head from 'next/head';
 import { Icon } from '@chakra-ui/react';
+import { LikedTweet } from './types/LikedTweet';
 import Link from 'next/link';
 import { like } from '../lib/apis';
 import searchWords from '../constants/searchWords';
@@ -47,6 +48,7 @@ const Home = () => {
 		delay: 1000,
 	});
 	const [nextToken, setNextToken] = useState<string | undefined>();
+	const [reset, setNextReset] = useState<number | undefined>();
 	const prevNextToken = useRef(nextToken);
 	const toast = useToast();
 
@@ -75,6 +77,11 @@ const Home = () => {
 			return;
 		}
 
+		const count = debouncedLikeCount - prevLikeCount.current;
+		if (count <= 0) {
+			return;
+		}
+
 		const cloned = structuredClone(likedTweets);
 
 		let mounted = true;
@@ -82,7 +89,7 @@ const Home = () => {
 		//Make API Call
 		like({
 			query,
-			count: debouncedLikeCount - prevLikeCount.current,
+			count,
 			nextToken,
 		})
 			.then((tweetsResponse) => {
@@ -94,12 +101,15 @@ const Home = () => {
 				}
 			})
 			.catch((err: AxiosError) => {
+				const data = err.response?.data as any;
 				toast({
 					status: 'error',
 					title: 'Error',
-					description:
-						(err.response?.data as any).message || err.message,
+					description: data.message || err.message,
 				});
+				if (data.reset) {
+					setNextReset(data.reset);
+				}
 				console.log(err);
 			});
 
@@ -127,6 +137,15 @@ const Home = () => {
 			</Head>
 
 			<Container>
+				<Flex position={"fixed"} left={0} zIndex={1}>
+					<Container mt={5}>
+						<Box>
+							<Tag colorScheme='telegram'>
+								Reset: 1/26/2023 7:00 PM
+							</Tag>
+						</Box>
+					</Container>
+				</Flex>
 				<Box padding='4'>
 					<Flex
 						direction='column'
@@ -137,7 +156,7 @@ const Home = () => {
 						{likedTweets.map((tweet, idx) => {
 							return (
 								<Flex key={tweet.id}>
-									<TweetCard tweet={tweet} index={idx + 1}/>
+									<TweetCard tweet={tweet} index={idx + 1} />
 								</Flex>
 							);
 						})}
@@ -179,9 +198,9 @@ const Home = () => {
 	);
 };
 
-const TweetCard = ({ tweet, index }: { tweet: LikedTweet, index: number }) => {
+const TweetCard = ({ tweet, index }: { tweet: LikedTweet; index: number }) => {
 	return (
-		<Card maxW='sm' minW={{ sm: '280px', md: 'sm' }}>
+		<Card width={['250px', '280px', '350px', '400px']}>
 			<CardBody>
 				<Stack divider={<StackDivider />} spacing='4'>
 					<Box>
