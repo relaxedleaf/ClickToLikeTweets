@@ -35,7 +35,7 @@ import { AiOutlineHeart } from 'react-icons/ai';
 import { AxiosError } from 'axios';
 import Head from 'next/head';
 import { Icon } from '@chakra-ui/react';
-import { LikedTweet } from './types/LikedTweet';
+import { LikedTweet } from '../types/LikedTweet';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { like } from '../lib/apis';

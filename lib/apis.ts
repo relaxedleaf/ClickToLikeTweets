@@ -1,4 +1,4 @@
-import { LikedTweets } from '../pages/types/LikedTweet';
+import { LikedTweets } from '../types/LikedTweet';
 import axios from 'axios';
 
 export const like = async ({

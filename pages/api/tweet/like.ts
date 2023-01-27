@@ -1,4 +1,4 @@
-import { LikedTweet, LikedTweets } from '../../types/LikedTweet';
+import { LikedTweet, LikedTweets } from '../../../types/LikedTweet';
 import { NextApiRequest, NextApiResponse } from 'next';
 import Twitter, {
 	ApiResponseError,
@@ -6,8 +6,8 @@ import Twitter, {
 	TweetV2LikedByResult,
 } from 'twitter-api-v2';
 
-import ErrorResponse from '../../types/ErrorResponse';
-import TooManyRequestError from '../../types/TooManyRequestError';
+import ErrorResponse from '../../../types/ErrorResponse';
+import TooManyRequestError from '../../../types/TooManyRequestError';
 
 const twitterClient = new Twitter({
 	appKey: process.env.CONSUMER_KEY!,
