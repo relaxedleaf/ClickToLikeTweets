@@ -1,34 +1,73 @@
+import { AppState, useAppSelector } from '../store';
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
 
-import type { AppState } from '../store';
-
-export interface TweetLikingState {
+type QueryStatesKey = {
 	nextToken: string | undefined;
+	leftoverTweetIds: Array<string>;
+};
+
+type QueryStates = Record<string, QueryStatesKey>;
+export interface TweetLikingState {
 	nextReset: number | undefined;
+	queryStates: QueryStates;
 }
 
 const initialState: TweetLikingState = {
-	nextToken: undefined,
 	nextReset: undefined,
+	queryStates: {} as QueryStates,
 };
 
 export const tweetLikingSlice = createSlice({
 	name: 'tweetLiking',
 	initialState,
 	reducers: {
-		setNextToken: (state, action: PayloadAction<string | undefined>) => {
-			state.nextToken = action.payload;
+		setQueryState: (
+			state,
+			action: PayloadAction<{
+				query: string;
+				nextToken: string | undefined;
+				leftoverTweetIds: Array<string>;
+			}>
+		) => {
+			const { query, nextToken, leftoverTweetIds } = action.payload;
+			state.queryStates[query] = {
+				nextToken,
+				leftoverTweetIds,
+			};
 		},
+		updateLeftoverTweetIdsByCount: (
+			state,
+			action: PayloadAction<{
+				count: number;
+				query: string;
+			}>
+		) => {
+			const { count, query } = action.payload;
+			const sliced = state.queryStates[query].leftoverTweetIds.slice(
+				count,
+				state.queryStates[query].leftoverTweetIds.length
+			);
+
+			state.queryStates[query].leftoverTweetIds = sliced;
+		},
+
 		setNextReset: (state, action: PayloadAction<number | undefined>) => {
 			state.nextReset = action.payload;
 		},
 	},
 });
 
-export const { setNextToken, setNextReset } = tweetLikingSlice.actions;
+export const { setQueryState, updateLeftoverTweetIdsByCount, setNextReset } =
+	tweetLikingSlice.actions;
 
+export const useQueryState = (query: string) => {
+	return useAppSelector(
+		(state: AppState) => state.tweetLiking.queryStates[query]
+	);
+};
 
-export const selectNextToken = (state: AppState) => state.tweetLiking.nextToken;
-export const selectNextReset = (state: AppState) => state.tweetLiking.nextReset;
+export const useNextReset = () => {
+	return useAppSelector((state: AppState) => state.tweetLiking.nextReset);
+};
 
 export default tweetLikingSlice.reducer;

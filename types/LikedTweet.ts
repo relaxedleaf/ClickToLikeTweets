@@ -7,5 +7,7 @@ export type LikedTweet = TweetV2 & {
 
 export type LikedTweets = {
 	tweets: Array<LikedTweet>,
-	nextToken: string | undefined
+	nextToken: string | undefined,
+	query: string,
+	leftoverTweetIds: Array<string>
 }

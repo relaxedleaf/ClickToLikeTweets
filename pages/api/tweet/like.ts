@@ -35,29 +35,32 @@ const like = async (
 		}
 
 		count = +count;
-		if (!count || Number.isNaN(count)) {
+		if (!count || Number.isNaN(count) || count > LIKE_API_LIMIT) {
 			return res
 				.status(400)
 				.json({ message: 'Incorrect format for count' });
 		}
 
 		const me = await twitterClient.currentUser();
+		const max_results = (() => {
+			if (count <= MAX_RESULT_MIN) {
+				return MAX_RESULT_MIN;
+			}
+
+			return count;
+		})();
 		const tweetResults = await twitterClient.v2.search({
 			query,
 			sort_order: 'recency',
 			next_token: nextToken,
-			max_results: (() => {
-				if (count <= MAX_RESULT_MIN) {
-					return MAX_RESULT_MIN;
-				}
-
-				return count > LIKE_API_LIMIT ? LIKE_API_LIMIT : count;
-			})(),
+			max_results
 		});
 
 		const data = {
 			tweets: [],
 			nextToken: undefined,
+			query,
+			leftoverTweetIds: []
 		} as LikedTweets;
 		data.nextToken = tweetResults.meta.next_token;
 
@@ -66,6 +69,13 @@ const like = async (
 		if (!tweets.length) {
 			console.log('No tweet was returned');
 			return res.json(data);
+		}
+		console.log({
+			returnedLength: tweets.length,
+			count
+		})
+		if (tweetResults.tweets.length > count){
+			data.leftoverTweetIds = tweetResults.tweets.slice(count, tweetResults.tweets.length).map(t => t.id);
 		}
 
 		const promises = [] as Array<Promise<LikedTweet>>;
