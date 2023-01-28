@@ -38,7 +38,7 @@ import { Icon } from '@chakra-ui/react';
 import { LikedTweet } from '../types/LikedTweet';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { likeByCount } from '../lib/apis';
+import { likeByCount } from '../lib/frontend/apis';
 import searchWords from '../constants/searchWords';
 import useDebounce from '../hooks/useDebounce';
 import useMountedEffect from '../hooks/useMountedEffect';
