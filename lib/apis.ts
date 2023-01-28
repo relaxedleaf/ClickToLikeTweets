@@ -1,7 +1,7 @@
 import { LikedTweets } from '../types/LikedTweet';
 import axios from 'axios';
 
-export const like = async ({
+export const likeByCount = async ({
 	query,
 	count,
 	nextToken,
@@ -10,7 +10,7 @@ export const like = async ({
 	count: number;
 	nextToken: string | undefined;
 }) => {
-	const res = await axios.post('/api/tweet/like', {
+	const res = await axios.post('/api/tweet/like/byCount', {
 		query,
 		count,
 		nextToken,

@@ -1,13 +1,12 @@
-import { LikedTweet, LikedTweets } from '../../../types/LikedTweet';
 import { NextApiRequest, NextApiResponse } from 'next';
 import Twitter, {
 	ApiResponseError,
 	TweetV2LikeResult,
 	TweetV2LikedByResult,
 } from 'twitter-api-v2';
-
-import ErrorResponse from '../../../types/ErrorResponse';
-import TooManyRequestError from '../../../types/TooManyRequestError';
+import ErrorResponse from '../../../../types/ErrorResponse';
+import { LikedTweets, LikedTweet } from '../../../../types/LikedTweet';
+import TooManyRequestError from '../../../../types/TooManyRequestError';
 
 const twitterClient = new Twitter({
 	appKey: process.env.CONSUMER_KEY!,
@@ -19,7 +18,7 @@ const twitterClient = new Twitter({
 const LIKE_API_LIMIT = 50;
 const MAX_RESULT_MIN = 10; //The `max_results` query parameter value has to be greater tor equal to 10
 
-const like = async (
+const likeByCount = async (
 	req: NextApiRequest,
 	res: NextApiResponse<LikedTweets | ErrorResponse | TooManyRequestError>
 ) => {
@@ -53,14 +52,14 @@ const like = async (
 			query,
 			sort_order: 'recency',
 			next_token: nextToken,
-			max_results
+			max_results,
 		});
 
 		const data = {
 			tweets: [],
 			nextToken: undefined,
 			query,
-			leftoverTweetIds: []
+			leftoverTweetIds: [],
 		} as LikedTweets;
 		data.nextToken = tweetResults.meta.next_token;
 
@@ -72,10 +71,12 @@ const like = async (
 		}
 		console.log({
 			returnedLength: tweets.length,
-			count
-		})
-		if (tweetResults.tweets.length > count){
-			data.leftoverTweetIds = tweetResults.tweets.slice(count, tweetResults.tweets.length).map(t => t.id);
+			count,
+		});
+		if (tweetResults.tweets.length > count) {
+			data.leftoverTweetIds = tweetResults.tweets
+				.slice(count, tweetResults.tweets.length)
+				.map((t) => t.id);
 		}
 
 		const promises = [] as Array<Promise<LikedTweet>>;
@@ -122,8 +123,8 @@ const like = async (
 									},
 								];
 								likedByResult.meta = {
-									result_count: 1
-								}
+									result_count: 1,
+								};
 							}
 
 							return {
@@ -151,16 +152,14 @@ const like = async (
 			err.data.detail === 'Too Many Requests'
 		) {
 			console.error(err);
-			return res
-				.status(500)
-				.json({
-					message: err.data.detail,
-					reset: err.rateLimit?.reset,
-				});
+			return res.status(500).json({
+				message: err.data.detail,
+				reset: err.rateLimit?.reset,
+			});
 		}
 		console.error(errMsg, err);
 		res.status(500).json({ message: errMsg });
 	}
 };
 
-export default like;
+export default likeByCount;

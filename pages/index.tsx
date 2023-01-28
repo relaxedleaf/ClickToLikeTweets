@@ -38,7 +38,7 @@ import { Icon } from '@chakra-ui/react';
 import { LikedTweet } from '../types/LikedTweet';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { like } from '../lib/apis';
+import { likeByCount } from '../lib/apis';
 import searchWords from '../constants/searchWords';
 import useDebounce from '../hooks/useDebounce';
 import useMountedEffect from '../hooks/useMountedEffect';
@@ -91,7 +91,7 @@ const Home = () => {
 		({ count }: { count: number }) => {
 			console.log(count);
 			const cloned = structuredClone(likedTweets);
-			like({
+			likeByCount({
 				query,
 				count,
 				nextToken,
