@@ -1,11 +1,12 @@
+import { LikedTweet, LikedTweets } from '../../../../types/LikedTweet';
 import { NextApiRequest, NextApiResponse } from 'next';
 import Twitter, {
 	ApiResponseError,
 	TweetV2LikeResult,
 	TweetV2LikedByResult,
 } from 'twitter-api-v2';
+
 import ErrorResponse from '../../../../types/ErrorResponse';
-import { LikedTweets, LikedTweet } from '../../../../types/LikedTweet';
 import TooManyRequestError from '../../../../types/TooManyRequestError';
 
 const twitterClient = new Twitter({
@@ -69,10 +70,7 @@ const likeByCount = async (
 			console.log('No tweet was returned');
 			return res.json(data);
 		}
-		console.log({
-			returnedLength: tweets.length,
-			count,
-		});
+
 		if (tweetResults.tweets.length > count) {
 			data.leftoverTweetIds = tweetResults.tweets
 				.slice(count, tweetResults.tweets.length)

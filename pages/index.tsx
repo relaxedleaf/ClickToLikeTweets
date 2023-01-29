@@ -74,10 +74,13 @@ const Home = () => {
 	const queryState = useQueryState(query);
 	const dispatch = useAppDispatch();
 
-	const handleSetLikedTweets = useCallback((_tweets: Array<LikedTweet>) => {
-		const clone = structuredClone(likedTweets);
-		setLikedTweets([...clone, ..._tweets])
-	}, [likedTweets, setLikedTweets]);
+	const handleSetLikedTweets = useCallback(
+		(_tweets: Array<LikedTweet>) => {
+			const clone = structuredClone(likedTweets);
+			setLikedTweets([...clone, ..._tweets]);
+		},
+		[likedTweets, setLikedTweets]
+	);
 
 	const handleLikeModeToggle = useCallback(() => {
 		setClickMode(!clickMode);
@@ -96,13 +99,54 @@ const Home = () => {
 
 	const handleLikeApiCallByCount = useCallback(
 		({ count }: { count: number }) => {
-			// const cloned = structuredClone(likedTweets);
-			likeByCount({
+			return likeByCount({
 				query,
 				count,
 				nextToken: queryState?.nextToken,
-			})
-				.then((tweetsResponse) => {
+			}).catch((err: AxiosError) => {
+				const data = err.response?.data as any;
+				toast({
+					status: 'error',
+					title: 'Error',
+					description: data.message || err.message,
+				});
+				if (data.reset) {
+					dispatch(updateNextReset(data.reset));
+				}
+				console.log(err);
+			});
+		},
+		[likedTweets, query, queryState, dispatch, updateNextReset]
+	);
+
+	const handleLikeApiCallByTweetIds = useCallback(
+		async ({ tweetIdsToLike }: { tweetIdsToLike: Array<string> }) => {
+			return likeByTweetIds({
+				query,
+				tweetIds: tweetIdsToLike,
+			}).catch((err: AxiosError) => {
+				const data = err.response?.data as any;
+				toast({
+					status: 'error',
+					title: 'Error',
+					description: data.message || err.message,
+				});
+				if (data.reset) {
+					dispatch(updateNextReset(data.reset));
+				}
+				console.log(err);
+			});
+		},
+		[query, dispatch, updateNextReset]
+	);
+
+	const masterFunction = useCallback(
+		async (count: number) => {
+			if (!queryState?.leftoverTweetIds?.length) {
+				const tweetsResponse = await handleLikeApiCallByCount({
+					count,
+				});
+				if (tweetsResponse) {
 					dispatch(
 						updateQueryState({
 							query,
@@ -110,89 +154,100 @@ const Home = () => {
 							leftoverTweetIds: tweetsResponse.leftoverTweetIds,
 						})
 					);
-					handleSetLikedTweets(tweetsResponse.tweets);
-				})
-				.catch((err: AxiosError) => {
-					const data = err.response?.data as any;
-					toast({
-						status: 'error',
-						title: 'Error',
-						description: data.message || err.message,
-					});
-					if (data.reset) {
-						dispatch(updateNextReset(data.reset));
-					}
-					console.log(err);
-				});
-		},
-		[likedTweets, query, queryState, dispatch, updateNextReset, handleSetLikedTweets]
-	);
-
-	const handleLikeApiCallByTweetIds = useCallback(
-		({ tweetIdsToLike }: { tweetIdsToLike: Array<string> }) => {
-			likeByTweetIds({
-				query,
-				tweetIds: tweetIdsToLike,
-			})
-				.then((tweetsResponse) => {
-					dispatch(
-						updateQueryState({
-							query: tweetsResponse.query,
-							nextToken: queryState?.nextToken,
-							leftoverTweetIds: queryState.leftoverTweetIds.filter(
-								(id) => {
-									return !tweetsResponse.tweets.find((t) => {
-										return t.id === id;
-									});
-								}
-							),
-						})
-					);
-
-					handleSetLikedTweets(tweetsResponse.tweets);
-				})
-				.catch((err: AxiosError) => {
-					const data = err.response?.data as any;
-					toast({
-						status: 'error',
-						title: 'Error',
-						description: data.message || err.message,
-					});
-					if (data.reset) {
-						dispatch(updateNextReset(data.reset));
-					}
-					console.log(err);
-				});
-		},
-		[likedTweets, query, queryState, dispatch, updateNextReset, handleSetLikedTweets]
-	);
-
-	const masterFunction = useCallback(
-		(count: number) => {
-			if (!queryState?.leftoverTweetIds?.length) {
-				handleLikeApiCallByCount({ count });
+					setLikedTweets([...likedTweets, ...tweetsResponse.tweets]);
+				}
 				return;
 			}
 
 			if (queryState?.leftoverTweetIds.length >= count) {
-				handleLikeApiCallByTweetIds({
+				const tweetsResponse = await handleLikeApiCallByTweetIds({
 					tweetIdsToLike: queryState.leftoverTweetIds.slice(0, count),
 				});
+				if (tweetsResponse) {
+					dispatch(
+						updateQueryState({
+							query: tweetsResponse.query,
+							nextToken: queryState?.nextToken,
+							leftoverTweetIds:
+								queryState.leftoverTweetIds.filter((id) => {
+									return !tweetsResponse.tweets.find((t) => {
+										return t.id === id;
+									});
+								}),
+						})
+					);
+
+					setLikedTweets([...likedTweets, ...tweetsResponse.tweets]);
+				}
 				return;
 			}
 			// Specify
-			handleLikeApiCallByTweetIds({
+			const byTweetIdResponse = await handleLikeApiCallByTweetIds({
 				tweetIdsToLike: queryState.leftoverTweetIds.slice(),
 			});
-			handleLikeApiCallByCount({
+			const byTweetCountResponse = await handleLikeApiCallByCount({
 				count: count - queryState.leftoverTweetIds.length,
 			});
+
+			if (byTweetIdResponse && byTweetCountResponse) {
+				dispatch(
+					updateQueryState({
+						query,
+						nextToken: byTweetCountResponse.nextToken,
+						leftoverTweetIds: byTweetCountResponse.leftoverTweetIds,
+					})
+				);
+				setLikedTweets([
+					...likedTweets,
+					...byTweetIdResponse.tweets,
+					...byTweetCountResponse.tweets,
+				]);
+			} else if (byTweetIdResponse) {
+				dispatch(
+					updateQueryState({
+						query: byTweetIdResponse.query,
+						nextToken: queryState?.nextToken,
+						leftoverTweetIds: queryState.leftoverTweetIds.filter(
+							(id) => {
+								return !byTweetIdResponse.tweets.find((t) => {
+									return t.id === id;
+								});
+							}
+						),
+					})
+				);
+
+				setLikedTweets([...likedTweets, ...byTweetIdResponse.tweets]);
+			} else if (byTweetCountResponse) {
+				dispatch(
+					updateQueryState({
+						query: byTweetCountResponse.query,
+						nextToken: queryState?.nextToken,
+						leftoverTweetIds: queryState.leftoverTweetIds.filter(
+							(id) => {
+								return !byTweetCountResponse.tweets.find(
+									(t) => {
+										return t.id === id;
+									}
+								);
+							}
+						),
+					})
+				);
+
+				setLikedTweets([
+					...likedTweets,
+					...byTweetCountResponse.tweets,
+				]);
+			}
 		},
 		[
 			queryState,
 			query,
 			handleLikeApiCallByCount,
 			handleLikeApiCallByTweetIds,
+			dispatch,
+			updateQueryState,
 		]
 	);
 
