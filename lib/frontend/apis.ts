@@ -18,3 +18,19 @@ export const likeByCount = async ({
 
 	return res.data as LikedTweets;
 };
+
+export const likeByTweetIds = async ({
+	query,
+	tweetIds,
+}: {
+	query: string;
+	tweetIds: Array<string>;
+}) => {
+	const res = await axios.post('/api/tweet/like/byTweetIds', {
+		query,
+		tweetIds
+	});
+
+	return res.data as LikedTweets;
+};
+

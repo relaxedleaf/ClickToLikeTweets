@@ -2,7 +2,7 @@ import { AppState, useAppSelector } from '../store';
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
 
 type QueryStatesKey = {
-	nextToken: string | undefined;
+	nextToken?: string | undefined;
 	leftoverTweetIds: Array<string>;
 };
 
@@ -21,11 +21,11 @@ export const tweetLikingSlice = createSlice({
 	name: 'tweetLiking',
 	initialState,
 	reducers: {
-		setQueryState: (
+		updateQueryState: (
 			state,
 			action: PayloadAction<{
 				query: string;
-				nextToken: string | undefined;
+				nextToken?: string | undefined;
 				leftoverTweetIds: Array<string>;
 			}>
 		) => {
@@ -51,13 +51,13 @@ export const tweetLikingSlice = createSlice({
 			state.queryStates[query].leftoverTweetIds = sliced;
 		},
 
-		setNextReset: (state, action: PayloadAction<number | undefined>) => {
+		updateNextReset: (state, action: PayloadAction<number | undefined>) => {
 			state.nextReset = action.payload;
 		},
 	},
 });
 
-export const { setQueryState, updateLeftoverTweetIdsByCount, setNextReset } =
+export const { updateQueryState, updateLeftoverTweetIdsByCount, updateNextReset } =
 	tweetLikingSlice.actions;
 
 export const useQueryState = (query: string) => {

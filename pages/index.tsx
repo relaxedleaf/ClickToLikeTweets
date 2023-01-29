@@ -30,6 +30,13 @@ import {
 	useRef,
 	useState,
 } from 'react';
+import { likeByCount, likeByTweetIds } from '../lib/frontend/apis';
+import {
+	updateNextReset,
+	updateQueryState,
+	useNextReset,
+	useQueryState,
+} from '../slices/TweetLikingSlice';
 
 import { AiOutlineHeart } from 'react-icons/ai';
 import { AxiosError } from 'axios';
@@ -38,8 +45,8 @@ import { Icon } from '@chakra-ui/react';
 import { LikedTweet } from '../types/LikedTweet';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { likeByCount } from '../lib/frontend/apis';
 import searchWords from '../constants/searchWords';
+import { useAppDispatch } from '../store';
 import useDebounce from '../hooks/useDebounce';
 import useMountedEffect from '../hooks/useMountedEffect';
 import useToast from '../hooks/useToast';
@@ -57,12 +64,20 @@ const Home = () => {
 		value: likeCount,
 		delay: 1000,
 	});
-	const [nextToken, setNextToken] = useState<string | undefined>();
-	const [reset, setNextReset] = useState<number | undefined>();
-	const prevNextToken = useRef(nextToken);
+
 	const toast = useToast();
 	const [clickMode, setClickMode] = useState<boolean>(true);
 	const [bulkLikeCount, setBulkLikeCount] = useState(10);
+
+	//Redux
+	const reset = useNextReset();
+	const queryState = useQueryState(query);
+	const dispatch = useAppDispatch();
+
+	const handleSetLikedTweets = useCallback((_tweets: Array<LikedTweet>) => {
+		const clone = structuredClone(likedTweets);
+		setLikedTweets([...clone, ..._tweets])
+	}, [likedTweets, setLikedTweets]);
 
 	const handleLikeModeToggle = useCallback(() => {
 		setClickMode(!clickMode);
@@ -73,34 +88,29 @@ const Home = () => {
 			setQuery(evt.target.value);
 		}, []);
 
-	const handleLikeBtnClick = useCallback(() => {
-		if (clickMode) {
-			setLikeCount(likeCount + 1);
-		} else {
-			handleApiCall({ count: bulkLikeCount });
-		}
-	}, [likeCount, bulkLikeCount, clickMode]);
-
 	useEffect(() => {
 		if (btnRef.current) {
 			btnRef.current.scrollIntoView();
 		}
 	}, [likedTweets]);
 
-	const handleApiCall = useCallback(
+	const handleLikeApiCallByCount = useCallback(
 		({ count }: { count: number }) => {
-			console.log(count);
-			const cloned = structuredClone(likedTweets);
+			// const cloned = structuredClone(likedTweets);
 			likeByCount({
 				query,
 				count,
-				nextToken,
+				nextToken: queryState?.nextToken,
 			})
 				.then((tweetsResponse) => {
-					setNextToken(tweetsResponse.nextToken);
-
-					//TODO: Maybe need to deal with duplicates idk
-					setLikedTweets([...cloned, ...tweetsResponse.tweets]);
+					dispatch(
+						updateQueryState({
+							query,
+							nextToken: tweetsResponse.nextToken,
+							leftoverTweetIds: tweetsResponse.leftoverTweetIds,
+						})
+					);
+					handleSetLikedTweets(tweetsResponse.tweets);
 				})
 				.catch((err: AxiosError) => {
 					const data = err.response?.data as any;
@@ -110,21 +120,93 @@ const Home = () => {
 						description: data.message || err.message,
 					});
 					if (data.reset) {
-						setNextReset(data.reset);
+						dispatch(updateNextReset(data.reset));
 					}
 					console.log(err);
 				});
 		},
-		[likedTweets, query, nextToken]
+		[likedTweets, query, queryState, dispatch, updateNextReset, handleSetLikedTweets]
 	);
 
+	const handleLikeApiCallByTweetIds = useCallback(
+		({ tweetIdsToLike }: { tweetIdsToLike: Array<string> }) => {
+			likeByTweetIds({
+				query,
+				tweetIds: tweetIdsToLike,
+			})
+				.then((tweetsResponse) => {
+					dispatch(
+						updateQueryState({
+							query: tweetsResponse.query,
+							nextToken: queryState?.nextToken,
+							leftoverTweetIds: queryState.leftoverTweetIds.filter(
+								(id) => {
+									return !tweetsResponse.tweets.find((t) => {
+										return t.id === id;
+									});
+								}
+							),
+						})
+					);
+
+					handleSetLikedTweets(tweetsResponse.tweets);
+				})
+				.catch((err: AxiosError) => {
+					const data = err.response?.data as any;
+					toast({
+						status: 'error',
+						title: 'Error',
+						description: data.message || err.message,
+					});
+					if (data.reset) {
+						dispatch(updateNextReset(data.reset));
+					}
+					console.log(err);
+				});
+		},
+		[likedTweets, query, queryState, dispatch, updateNextReset, handleSetLikedTweets]
+	);
+
+	const masterFunction = useCallback(
+		(count: number) => {
+			if (!queryState?.leftoverTweetIds?.length) {
+				handleLikeApiCallByCount({ count });
+				return;
+			}
+
+			if (queryState?.leftoverTweetIds.length >= count) {
+				handleLikeApiCallByTweetIds({
+					tweetIdsToLike: queryState.leftoverTweetIds.slice(0, count),
+				});
+				return;
+			}
+			// Specify
+			handleLikeApiCallByTweetIds({
+				tweetIdsToLike: queryState.leftoverTweetIds.slice(),
+			});
+			handleLikeApiCallByCount({
+				count: count - queryState.leftoverTweetIds.length,
+			});
+		},
+		[
+			queryState,
+			query,
+			handleLikeApiCallByCount,
+			handleLikeApiCallByTweetIds,
+		]
+	);
+
+	const handleLikeBtnClick = useCallback(() => {
+		if (clickMode) {
+			setLikeCount(likeCount + 1);
+		} else {
+			masterFunction(bulkLikeCount);
+		}
+	}, [likeCount, bulkLikeCount, clickMode, masterFunction, setLikeCount]);
+
 	useMountedEffect(() => {
-		if (
-			query !== prevQuery.current ||
-			nextToken !== prevNextToken.current
-		) {
+		if (query !== prevQuery.current) {
 			prevQuery.current = query;
-			prevNextToken.current = nextToken;
 			return;
 		}
 		const count = debouncedLikeCount - prevLikeCount.current;
@@ -132,11 +214,11 @@ const Home = () => {
 			return;
 		}
 
-		handleApiCall({ count });
+		masterFunction(count);
 
 		//Save prev like count
 		prevLikeCount.current = debouncedLikeCount;
-	}, [debouncedLikeCount, query, nextToken]);
+	}, [debouncedLikeCount, query, masterFunction]);
 
 	const formattedDate = useMemo(() => {
 		if (reset) {
