@@ -1,6 +1,6 @@
 import { LikedTweet, LikedTweets } from '../../../../types/LikedTweet';
 import { NextApiRequest, NextApiResponse } from 'next';
-import Twitter, {
+import  {
 	ApiResponseError,
 	TweetV2LikeResult,
 	TweetV2LikedByResult,
@@ -8,13 +8,7 @@ import Twitter, {
 
 import ErrorResponse from '../../../../types/ErrorResponse';
 import TooManyRequestError from '../../../../types/TooManyRequestError';
-
-const twitterClient = new Twitter({
-	appKey: process.env.CONSUMER_KEY!,
-	appSecret: process.env.CONSUMER_SECRET!,
-	accessToken: process.env.ACCESS_TOKEN!,
-	accessSecret: process.env.ACCESS_TOKEN_SECRET!,
-}).readWrite;
+import { twitterClient } from '../../../../lib/backend/twitterClient';
 
 const LIKE_API_LIMIT = 50;
 const MAX_RESULT_MIN = 10; //The `max_results` query parameter value has to be greater tor equal to 10

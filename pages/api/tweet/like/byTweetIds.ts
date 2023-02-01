@@ -8,7 +8,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 import ErrorResponse from '../../../../types/ErrorResponse';
 import TooManyRequestError from '../../../../types/TooManyRequestError';
-import twitterClient from '../../../../lib/backend/twitterClient';
+import {twitterClient} from '../../../../lib/backend/twitterClient';
 
 const LIKE_API_LIMIT = 50;
 
