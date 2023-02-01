@@ -13,7 +13,5 @@ const twitterApiClient = new TwitterApi({
 });
 
 
-export {
-	twitterClient,
-	twitterApiClient
-};
+
+export { twitterClient, twitterApiClient };

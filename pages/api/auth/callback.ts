@@ -1,6 +1,6 @@
-import { withIronSessionApiRoute } from 'iron-session/next';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { TwitterApi } from 'twitter-api-v2';
+import { withIronSessionApiRoute } from 'iron-session/next';
 
 export default withIronSessionApiRoute(
 	async function callback(req: NextApiRequest, res: NextApiResponse) {
@@ -9,12 +9,6 @@ export default withIronSessionApiRoute(
 		// Get the saved codeVerifier from session
 		//@ts-ignore
 		const { codeVerifier, state: sessionState } = req.session;
-		console.log({
-			state,
-			code,
-			codeVerifier,
-			sessionState,
-		});
 
 		if (!codeVerifier || !state || !sessionState || !code) {
 			return res
@@ -39,22 +33,15 @@ export default withIronSessionApiRoute(
 				redirectUri: process.env.CALLBACK_URL!,
 			})
 			.then(async (response) => {
-				const {
-					client: loggedClient,
-					accessToken,
-					refreshToken,
-					expiresIn,
-				} = response;
+				const { accessToken, refreshToken, expiresIn } = response;
 
-				console.log({
-					loggedClient,
-					accessToken,
-					refreshToken,
-					expiresIn,
-				})
-
-				const user = await loggedClient.currentUserV2();
-				console.log(user);
+				/* @ts-ignore */
+				req.session.accessToken = accessToken;
+				/* @ts-ignore */
+				req.session.refreshToken = refreshToken;
+				/* @ts-ignore */
+				req.session.expiresIn = expiresIn;
+				await req.session.save();
 
 				return res.redirect('http://localhost:3000');
 			})
