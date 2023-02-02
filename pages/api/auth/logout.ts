@@ -3,6 +3,10 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 export default withIronSessionApiRoute(
 	async function logout(req: NextApiRequest, res: NextApiResponse) {
+		if (req.method !== 'DELETE') {
+			res.status(400).json({ message: 'DELETE route' });
+		}
+
 		req.session.destroy();
 
 		res.json({

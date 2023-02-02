@@ -1,5 +1,6 @@
 import { LikedTweets } from '../../types/LikedTweet';
 import axios from 'axios';
+import User from '../../types/User';
 
 export const likeByCount = async ({
 	query,
@@ -28,9 +29,20 @@ export const likeByTweetIds = async ({
 }) => {
 	const res = await axios.post('/api/tweet/like/byTweetIds', {
 		query,
-		tweetIds
+		tweetIds,
 	});
 
 	return res.data as LikedTweets;
 };
 
+export const getMe = async () => {
+	const res = await axios.get('/api/auth/me');
+
+	return res.data as User;
+};
+
+export const logout = async () => {
+	const res = await axios.delete('/api/auth/logout');
+
+	return res.data;
+};

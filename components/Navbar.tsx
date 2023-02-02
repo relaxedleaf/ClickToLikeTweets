@@ -22,9 +22,12 @@ import {
 } from '@chakra-ui/icons';
 import { AiOutlineTwitter } from 'react-icons/ai';
 import { useCallback } from 'react';
-import Router from 'next/router'
+import Router from 'next/router';
+import { useUser } from '../slices/Auth/hooks';
 
 export default function Navbar() {
+	const user = useUser();
+	console.log(user);
 	const { isOpen, onToggle } = useDisclosure();
 
     const handleSignIn = useCallback(() => {

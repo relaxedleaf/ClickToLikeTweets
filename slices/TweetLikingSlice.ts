@@ -1,5 +1,7 @@
-import { AppState, useAppSelector } from '../store';
+
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
+import useAppSelector from '../hooks/useAppSelector';
+import { AppState } from '../store';
 
 type QueryStatesKey = {
 	nextToken?: string | undefined;
