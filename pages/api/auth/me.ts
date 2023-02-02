@@ -20,6 +20,8 @@ export default withIronSessionApiRoute(
 				})
 			).data;
 
+			me.profile_image_url = me.profile_image_url?.replace('_normal', '');
+
 			return res.json(me);
 		} catch (err) {
             console.log(err);

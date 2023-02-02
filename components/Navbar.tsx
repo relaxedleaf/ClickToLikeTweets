@@ -1,3 +1,10 @@
+import Router from 'next/router';
+import useAppDispatch from '../hooks/useAppDispatch';
+import { AiOutlineTwitter } from 'react-icons/ai';
+import { logout } from '../lib/frontend/apis';
+import { updateUser } from '../slices/Auth/AuthSlice';
+import { useCallback } from 'react';
+import { useUser } from '../slices/Auth/hooks';
 import {
 	Box,
 	Flex,
@@ -13,6 +20,12 @@ import {
 	PopoverContent,
 	useColorModeValue,
 	useDisclosure,
+	Avatar,
+	Menu,
+	MenuButton,
+	MenuDivider,
+	MenuItem,
+	MenuList,
 } from '@chakra-ui/react';
 import {
 	HamburgerIcon,
@@ -20,22 +33,27 @@ import {
 	ChevronDownIcon,
 	ChevronRightIcon,
 } from '@chakra-ui/icons';
-import { AiOutlineTwitter } from 'react-icons/ai';
-import { useCallback } from 'react';
-import Router from 'next/router';
-import { useUser } from '../slices/Auth/hooks';
 
 export default function Navbar() {
 	const user = useUser();
-	console.log(user);
 	const { isOpen, onToggle } = useDisclosure();
+	const dispatch = useAppDispatch();
 
-    const handleSignIn = useCallback(() => {
-        Router.push('/api/auth/authorize')
-    }, []);
+	const handleSignIn = useCallback(() => {
+		Router.push('/api/auth/authorize');
+	}, []);
+
+	const handleLogout = useCallback(async () => {
+		try {
+			await logout();
+			dispatch(updateUser(undefined));
+		} catch (err) {
+			console.log(err);
+		}
+	}, [dispatch]);
 
 	return (
-        <Box bg={useColorModeValue('gray.100', 'gray.900')} px={4}>
+		<Box bg={useColorModeValue('gray.100', 'gray.900')} px={4}>
 			<Flex
 				minH={'60px'}
 				py={{ base: 2 }}
@@ -77,18 +95,43 @@ export default function Navbar() {
 					direction={'row'}
 					spacing={6}
 				>
-					<Button
-						fontSize={'sm'}
-						fontWeight={600}
-						color={'white'}
-						bg={'blue.500'}
-						_hover={{
-							bg: 'blue.400',
-						}}
-                        onClick={handleSignIn}
-					>
-						Sign In
-					</Button>
+					{user ? (
+						<Flex alignItems={'center'}>
+							<Menu>
+								<MenuButton
+									as={Button}
+									rounded={'full'}
+									variant={'link'}
+									cursor={'pointer'}
+									minW={0}
+								>
+									<Avatar
+										size={'sm'}
+										src={user.profile_image_url}
+									/>
+								</MenuButton>
+								<MenuList>
+									{/* <MenuDivider /> */}
+									<MenuItem onClick={handleLogout}>
+										Logout
+									</MenuItem>
+								</MenuList>
+							</Menu>
+						</Flex>
+					) : (
+						<Button
+							fontSize={'sm'}
+							fontWeight={600}
+							color={'white'}
+							bg={'blue.500'}
+							_hover={{
+								bg: 'blue.400',
+							}}
+							onClick={handleSignIn}
+						>
+							Sign In
+						</Button>
+					)}
 				</Stack>
 			</Flex>
 
