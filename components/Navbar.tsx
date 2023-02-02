@@ -21,9 +21,15 @@ import {
 	ChevronRightIcon,
 } from '@chakra-ui/icons';
 import { AiOutlineTwitter } from 'react-icons/ai';
+import { useCallback } from 'react';
+import Router from 'next/router'
 
 export default function Navbar() {
 	const { isOpen, onToggle } = useDisclosure();
+
+    const handleSignIn = useCallback(() => {
+        Router.push('/api/auth/authorize')
+    }, []);
 
 	return (
         <Box bg={useColorModeValue('gray.100', 'gray.900')} px={4}>
@@ -76,6 +82,7 @@ export default function Navbar() {
 						_hover={{
 							bg: 'blue.400',
 						}}
+                        onClick={handleSignIn}
 					>
 						Sign In
 					</Button>
