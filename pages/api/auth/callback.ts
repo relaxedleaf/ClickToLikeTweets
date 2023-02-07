@@ -43,7 +43,7 @@ export default withIronSessionApiRoute(
 				req.session.expiresIn = expiresIn;
 				await req.session.save();
 
-				return res.redirect('http://localhost:3000');
+				return res.redirect(process.env.DOMAIN!);
 			})
 			.catch((err) => {
 				console.log(err);
