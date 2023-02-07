@@ -402,7 +402,7 @@ const Home = () => {
 
 const TweetCard = ({ tweet, index }: { tweet: LikedTweet; index: number }) => {
 	return (
-		<Card width={['250px', '280px', '350px', '400px']}>
+		<Card width={['280px', '350px', '380px']}>
 			<CardBody>
 				<Stack divider={<StackDivider />} spacing='4'>
 					<Box>
