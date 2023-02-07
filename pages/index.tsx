@@ -46,10 +46,10 @@ import { LikedTweet } from '../types/LikedTweet';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import searchWords from '../constants/searchWords';
-import { useAppDispatch } from '../store';
 import useDebounce from '../hooks/useDebounce';
 import useMountedEffect from '../hooks/useMountedEffect';
 import useToast from '../hooks/useToast';
+import useAppDispatch from '../hooks/useAppDispatch';
 
 const defaultSelectValue = searchWords[0];
 
@@ -73,14 +73,6 @@ const Home = () => {
 	const reset = useNextReset();
 	const queryState = useQueryState(query);
 	const dispatch = useAppDispatch();
-
-	const handleSetLikedTweets = useCallback(
-		(_tweets: Array<LikedTweet>) => {
-			const clone = structuredClone(likedTweets);
-			setLikedTweets([...clone, ..._tweets]);
-		},
-		[likedTweets, setLikedTweets]
-	);
 
 	const handleLikeModeToggle = useCallback(() => {
 		setClickMode(!clickMode);
@@ -410,7 +402,7 @@ const Home = () => {
 
 const TweetCard = ({ tweet, index }: { tweet: LikedTweet; index: number }) => {
 	return (
-		<Card width={['250px', '280px', '350px', '400px']}>
+		<Card width={['280px', '350px', '380px']}>
 			<CardBody>
 				<Stack divider={<StackDivider />} spacing='4'>
 					<Box>

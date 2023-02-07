@@ -1,4 +1,4 @@
-import Twitter from 'twitter-api-v2';
+import Twitter, { TwitterApi } from 'twitter-api-v2';
 
 const twitterClient = new Twitter({
 	appKey: process.env.CONSUMER_KEY!,
@@ -7,4 +7,11 @@ const twitterClient = new Twitter({
 	accessSecret: process.env.ACCESS_TOKEN_SECRET!,
 }).readWrite;
 
-export default twitterClient;
+const twitterApiClient = new TwitterApi({
+	clientId: process.env.CLIENT_ID!,
+	clientSecret: process.env.CLIENT_SECRET!,
+});
+
+
+
+export { twitterClient, twitterApiClient };

@@ -43,6 +43,7 @@ const hotTopics = [
 	'LearnWeb3DAO',
 	'Linux',
 	'100DaysOfCode',
+	"ICodeThis",
 	'LeetCode',
 	'BigData',
 	'Blockchain',
