@@ -19,7 +19,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
 
 	useEffect(() => {
 		autoLogin();
-	}, []);
+	}, [autoLogin]);
 
 	return <>{children}</>;
 };
