@@ -15,25 +15,9 @@ export default withIronSessionApiRoute(
 			{
 				scope: [
 					'tweet.read',
-					'tweet.write',
-					'tweet.moderate.write',
 					'users.read',
-					'follows.read',
-					'follows.write',
-					'offline.access',
-					'space.read',
-					'mute.read',
-					'mute.write',
 					'like.read',
-					'like.write',
-					'list.read',
-					'list.write',
-					'block.read',
-					'block.write',
-					'bookmark.read',
-					'bookmark.write',
-					'dm.read',
-					'dm.write',
+					'like.write'
 				],
 			}
 		);
