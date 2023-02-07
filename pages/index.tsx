@@ -108,7 +108,7 @@ const Home = () => {
 				console.log(err);
 			});
 		},
-		[likedTweets, query, queryState, dispatch, updateNextReset, toast]
+		[query, queryState, dispatch, toast]
 	);
 
 	const handleLikeApiCallByTweetIds = useCallback(
@@ -129,7 +129,7 @@ const Home = () => {
 				console.log(err);
 			});
 		},
-		[query, dispatch, updateNextReset, toast]
+		[query, dispatch, toast]
 	);
 
 	const masterFunction = useCallback(
@@ -239,7 +239,6 @@ const Home = () => {
 			handleLikeApiCallByCount,
 			handleLikeApiCallByTweetIds,
 			dispatch,
-			updateQueryState,
 			likedTweets
 		]
 	);
